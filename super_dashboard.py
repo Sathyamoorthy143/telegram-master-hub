@@ -74,7 +74,7 @@ class RequestsRequest(BaseRequest):
 load_dotenv()
 
 # --- 1. CORE CONFIGURATION ---
-BOT_TOKEN = os.getenv("DASHBOARD_BOT_TOKEN")
+BOT_TOKEN = os.getenv("DASHBOARD_BOT_TOKEN", "").strip()
 ADMIN_IDS = [int(i.strip()) for i in os.getenv("ADMIN_IDS", "").split(",") if i.strip()]
 HUB_SECRET = os.getenv("HUB_SECRET", "super_secret_token_123")
 PORT = int(os.getenv("PORT", "7860"))
@@ -318,21 +318,17 @@ async def main_hub():
         print("❌ DASHBOARD_BOT_TOKEN is missing!")
         return
     
-    # Try Initial Sync
-    await sync_with_botfather()
-    
     print(f"🏰 Hub starting on port {PORT}...")
     
     # Using custom Requests engine because HTTPX times out on some HF spaces
     request_config = RequestsRequest()
     bot_app = ApplicationBuilder().token(BOT_TOKEN).request(request_config).build()
     
-    
     bot_app.add_handler(CommandHandler("start", start))
     bot_app.add_handler(CallbackQueryHandler(button_handler))
     if bot_app.job_queue: bot_app.job_queue.run_repeating(log_streamer_job, interval=3)
     
-    # Retry initialization in case of network hiccups
+    # Retry initialization
     for attempt in range(3):
         try:
             print(f"🔄 Initializing bot (Attempt {attempt+1}/3)...")
@@ -342,6 +338,9 @@ async def main_hub():
             if attempt == 2: raise e
             print(f"⚠️ Init failed, retrying in 5s... ({e})")
             await asyncio.sleep(5)
+    
+    # Try Sync AFTER initialization
+    await sync_with_botfather()
     
     await bot_app.bot.set_my_commands([BotCommand("start", "Launch Dashboard")])
     await bot_app.start()
