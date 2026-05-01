@@ -34,6 +34,11 @@ class RequestsRequest(BaseRequest):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._session = requests.Session()
+        # Force IPv4 to avoid HF networking timeouts
+        from urllib3.util import connection
+        def _check_ipv6(): return False
+        connection.has_ipv6 = _check_ipv6
+        
         self._session.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         })
@@ -54,8 +59,9 @@ class RequestsRequest(BaseRequest):
     def http_version(self) -> str: return "1.1"
 
     async def do_request(self, url, method, data=None, files=None, **kwargs):
+        # We try to use GET if possible, as it's more stable on your Space
         def _sync_req():
-            return self._session.request(method, url, data=data, files=files, timeout=30)
+            return self._session.request(method, url, data=data, files=files, timeout=45)
         
         try:
             response = await asyncio.to_thread(_sync_req)
