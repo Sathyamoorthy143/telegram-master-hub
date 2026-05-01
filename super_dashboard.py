@@ -33,35 +33,32 @@ from telethon import TelegramClient, events
 class RequestsRequest(BaseRequest):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._session = requests.Session()
-        # Force IPv4 to avoid HF networking timeouts
-        from urllib3.util import connection
-        def _check_ipv6(): return False
-        connection.has_ipv6 = _check_ipv6
-        
-        self._session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        })
+        # Force IPv4 via global setting
+        import urllib3.util.connection as connection
+        connection.has_ipv6 = lambda: False
 
     @property
-    def connect_timeout(self) -> Optional[float]: return 30.0
+    def connect_timeout(self) -> Optional[float]: return 20.0
     @property
-    def read_timeout(self) -> Optional[float]: return 30.0
+    def read_timeout(self) -> Optional[float]: return 20.0
     @property
-    def write_timeout(self) -> Optional[float]: return 30.0
+    def write_timeout(self) -> Optional[float]: return 20.0
     @property
-    def pool_timeout(self) -> Optional[float]: return 30.0
+    def pool_timeout(self) -> Optional[float]: return 20.0
     @property
-    def connection_pool_size(self) -> Optional[int]: return 10
+    def connection_pool_size(self) -> Optional[int]: return 1
     @property
     def proxy_url(self) -> Optional[str]: return None
     @property
     def http_version(self) -> str: return "1.1"
 
     async def do_request(self, url, method, data=None, files=None, **kwargs):
-        # We try to use GET if possible, as it's more stable on your Space
         def _sync_req():
-            return self._session.request(method, url, data=data, files=files, timeout=45)
+            # Match the logic that works in your sync_with_botfather function
+            if method.upper() == "GET" or (not data and not files):
+                return requests.get(url, timeout=15)
+            else:
+                return requests.post(url, data=data, files=files, timeout=15)
         
         try:
             response = await asyncio.to_thread(_sync_req)
