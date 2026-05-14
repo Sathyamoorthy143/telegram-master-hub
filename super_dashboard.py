@@ -244,11 +244,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     btns.append([InlineKeyboardButton("📊 Refresh", callback_data="refresh"), InlineKeyboardButton("🔄 Sync BotFather", callback_data="sync")])
     
+    if not text.strip():
+        text = "🏰 *MASTER HUB*\n_Initializing dashboard... please refresh._"
+    
     if update.callback_query:
         # If the text is too long, edit_message_text might fail. Handle gracefully.
         try:
             await update.callback_query.edit_message_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(btns))
-        except:
+        except Exception as e:
+            print(f"⚠️ Edit Failed: {e}")
             await update.callback_query.message.delete()
             await context.bot.send_message(chat_id=update.effective_chat.id, text=text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(btns))
     else:
@@ -341,6 +345,10 @@ async def main_hub():
             await bot_app.initialize()
             break
         except Exception as e:
+            if "Conflict" in str(e):
+                print("❌ CONFLICT ERROR: The bot is already running in another location!")
+                print("👉 Please stop the bot on your local machine or other servers.")
+                return # Exit early on conflict
             if attempt == 2: raise e
             print(f"⚠️ Init failed, retrying in 5s... ({e})")
             await asyncio.sleep(5)
@@ -350,8 +358,14 @@ async def main_hub():
     
     await bot_app.bot.set_my_commands([BotCommand("start", "Launch Dashboard")])
     await bot_app.start()
-    await bot_app.updater.start_polling()
     
+    try:
+        await bot_app.updater.start_polling()
+    except Exception as e:
+        if "Conflict" in str(e):
+            print("❌ CONFLICT ERROR: Another instance started while polling!")
+            return
+
     config = uvicorn.Config(api_app, host="0.0.0.0", port=PORT, log_level="error")
     await uvicorn.Server(config).serve()
 
