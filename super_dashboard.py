@@ -211,28 +211,28 @@ async def sync_with_botfather():
     print("✨ Sync Complete.")
 
 # --- 5. TELEGRAM UI ---
-def escape_html(text: str) -> str:
-    """Escapes text for HTML mode."""
-    return html.escape(str(text))
+def clean_text(text: str) -> str:
+    """Removes any potential breaking characters."""
+    return str(text).replace("<", "").replace(">", "")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.effective_user or update.effective_user.id not in ADMIN_IDS:
-        await update.effective_message.reply_text(f"⛔ Access Denied. ID: <code>{update.effective_user.id}</code>", parse_mode="HTML")
+        await update.effective_message.reply_text(f"⛔ Access Denied. ID: {update.effective_user.id}")
         return
     
-    text = f"🏰 <b>MASTER HUB</b> (Total Bots: {len(CONNECTED_BOTS)})\n"
+    text = f"🏰 MASTER HUB (Total Bots: {len(CONNECTED_BOTS)})\n"
     text += f"━━━━━━━━━━━━━━━\n\n"
     
     if not CONNECTED_BOTS:
-        text += "<i>No bots found. Click Sync to scan BotFather.</i>"
+        text += "No bots found. Click Sync to scan BotFather."
     else:
         for bid, bot in CONNECTED_BOTS.items():
             is_active = bot.last_seen and (datetime.datetime.now() - bot.last_seen).seconds < 60
             s = "🟢" if is_active else "⚪"
-            safe_name = escape_html(bot.name)
-            safe_uname = escape_html(bot.username)
-            text += f"{s} <b>{safe_name}</b> (@{safe_uname})\n"
-            text += f"   🔑 <code>{bot.token or 'No Token'}</code>\n\n"
+            safe_name = clean_text(bot.name)
+            safe_uname = clean_text(bot.username)
+            text += f"{s} {safe_name} (@{safe_uname})\n"
+            text += f"   🔑 {bot.token or 'No Token'}\n\n"
     
     btns = []
     # Compact Bot Management Buttons
@@ -247,21 +247,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     btns.append([InlineKeyboardButton("📊 Refresh", callback_data="refresh"), InlineKeyboardButton("🔄 Sync BotFather", callback_data="sync")])
     
     if not text.strip():
-        text = "🏰 <b>MASTER HUB</b>\n<i>Initializing dashboard... please refresh.</i>"
+        text = "🏰 MASTER HUB\nInitializing dashboard... please refresh."
     
     # Debug logging
-    print(f"📊 Dashboard UI generated ({len(text)} chars)")
+    print(f"📊 Dashboard UI generated ({len(text)} chars) - PLAIN TEXT MODE")
     print(f"🔍 DEBUG: First 50 chars: {text[:50]!r}")
     
     if update.callback_query:
         try:
-            await update.callback_query.edit_message_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(btns))
+            await update.callback_query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(btns))
         except Exception as e:
             print(f"⚠️ Edit Failed: {e}")
             await update.callback_query.message.delete()
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(btns))
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=InlineKeyboardMarkup(btns))
     else:
-        await update.message.reply_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(btns))
+        await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(btns))
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -271,42 +271,42 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await start(update, context)
     
     elif query.data == "sync":
-        await query.edit_message_text("🔄 <b>Syncing with @BotFather...</b>\nCheck your terminal for login if needed.", parse_mode="HTML")
+        await query.edit_message_text("🔄 Syncing with @BotFather...\nCheck your terminal for login if needed.")
         await sync_with_botfather()
         await start(update, context)
     
     elif query.data.startswith("manage_"):
         bid = query.data.replace("manage_", "")
         bot = CONNECTED_BOTS.get(bid)
-        safe_name = escape_html(bot.name)
-        safe_uname = escape_html(bot.username)
-        safe_desc = escape_html(bot.description[:100] + ("..." if len(bot.description)>100 else ""))
+        safe_name = clean_text(bot.name)
+        safe_uname = clean_text(bot.username)
+        safe_desc = clean_text(bot.description[:100] + ("..." if len(bot.description)>100 else ""))
         
-        text = f"🤖 <b>BOT CONTROL PANEL</b>\n"
+        text = f"🤖 BOT CONTROL PANEL\n"
         text += f"━━━━━━━━━━━━━━━\n"
-        text += f"🏷️ <b>Name:</b> {safe_name}\n"
-        text += f"📧 <b>User:</b> @{safe_uname}\n"
-        text += f"📝 <b>Desc:</b> <i>{safe_desc}</i>\n"
-        text += f"🔑 <b>Token:</b> <code>{bot.token or 'Hidden'}</code>\n"
+        text += f"🏷️ Name: {safe_name}\n"
+        text += f"📧 User: @{safe_uname}\n"
+        text += f"📝 Desc: {safe_desc}\n"
+        text += f"🔑 Token: {bot.token or 'Hidden'}\n"
         text += f"━━━━━━━━━━━━━━━\n"
-        text += f"📊 <b>AI Usage:</b> <code>{bot.usage.get('tokens',0)}</code> tokens"
+        text += f"📊 AI Usage: {bot.usage.get('tokens',0)} tokens"
         
         btns = [[InlineKeyboardButton("📜 Live Logs", callback_data=f"logs_{bid}")], [InlineKeyboardButton("🔙 Back", callback_data="home")]]
         
         if bot.photo_id:
             try:
                 await query.message.delete()
-                await context.bot.send_photo(chat_id=query.message.chat_id, photo=bot.photo_id, caption=text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(btns))
+                await context.bot.send_photo(chat_id=query.message.chat_id, photo=bot.photo_id, caption=text, reply_markup=InlineKeyboardMarkup(btns))
             except:
-                await query.edit_message_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(btns))
+                await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(btns))
         else:
-            await query.edit_message_text(text, parse_mode="HTML", reply_markup=InlineKeyboardMarkup(btns))
+            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(btns))
     
     elif query.data.startswith("logs_"):
         bid = query.data.replace("logs_", "")
         bot = CONNECTED_BOTS.get(bid)
-        log_text = escape_html("\n".join(bot.logs[-15:])) if bot.logs else "No logs/Agent not connected."
-        msg = await query.edit_message_text(f"📜 <b>Logs: {bot.name}</b>\n<pre>{log_text}</pre>", parse_mode="HTML", 
+        log_text = clean_text("\n".join(bot.logs[-15:])) if bot.logs else "No logs/Agent not connected."
+        msg = await query.edit_message_text(f"📜 Logs: {bot.name}\n\n{log_text}", 
                                            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("⏹ Stop", callback_data="home")]]))
         LIVE_LOG_SESSIONS[query.from_user.id] = {"bot_id": bid, "message_id": msg.message_id, "chat_id": query.message.chat_id, "last_text": log_text}
     
