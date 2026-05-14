@@ -260,7 +260,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if update.callback_query:
         try:
-            await update.callback_query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(btns))
+            await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=update.callback_query.message.message_id, text=text, reply_markup=InlineKeyboardMarkup(btns))
         except Exception as e:
             print(f"⚠️ Edit Failed: {e}")
             try:
@@ -272,13 +272,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 print(f"❌ Critical Send Failure (Edit Fallback): {e2}")
     else:
         try:
-            await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(btns))
+            await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=InlineKeyboardMarkup(btns))
         except Exception as e:
             print(f"❌ Critical Send Failure (Initial): {e}")
             # Try sending without buttons as a last resort
             try:
                 print("🔄 Attempting EMERGENCY TEST: Sending 'HELLO WORLD'...")
-                await update.message.reply_text("⚠️ EMERGENCY TEST: Hello World. If you see this, the dashboard content is the problem.")
+                await context.bot.send_message(chat_id=update.effective_chat.id, text="⚠️ EMERGENCY TEST: Hello World. If you see this, the dashboard content is the problem.")
             except Exception as e4:
                 print(f"💀 TOTAL SYSTEM FAILURE: Even Hello World failed: {e4}")
 
