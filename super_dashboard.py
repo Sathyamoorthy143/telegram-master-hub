@@ -251,6 +251,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     # Debug logging
     print(f"📊 Dashboard UI generated ({len(text)} chars)")
+    print(f"🔍 DEBUG: First 50 chars: {text[:50]!r}")
     
     if update.callback_query:
         try:
@@ -352,7 +353,7 @@ async def main_hub():
             if "Conflict" in str(e):
                 print("❌ CONFLICT ERROR: The bot is already running in another location!")
                 print("👉 Please stop the bot on your local machine or other servers.")
-                return # Exit early on conflict
+                os._exit(1) # Force immediate exit to stop the loop
             if attempt == 2: raise e
             print(f"⚠️ Init failed, retrying in 5s... ({e})")
             await asyncio.sleep(5)
@@ -368,7 +369,7 @@ async def main_hub():
     except Exception as e:
         if "Conflict" in str(e):
             print("❌ CONFLICT ERROR: Another instance started while polling!")
-            return
+            os._exit(1)
 
     config = uvicorn.Config(api_app, host="0.0.0.0", port=PORT, log_level="error")
     await uvicorn.Server(config).serve()
