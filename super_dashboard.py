@@ -356,9 +356,7 @@ async def main_hub():
     
     print(f"🏰 Hub starting on port {PORT}...")
     
-    # Using custom Requests engine because HTTPX times out on some HF spaces
-    request_config = RequestsRequest()
-    bot_app = ApplicationBuilder().token(BOT_TOKEN).request(request_config).build()
+    bot_app = ApplicationBuilder().token(BOT_TOKEN).build()
     
     bot_app.add_handler(CommandHandler("start", start))
     bot_app.add_handler(CallbackQueryHandler(button_handler))
