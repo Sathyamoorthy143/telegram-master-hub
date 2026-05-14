@@ -11,7 +11,11 @@ A centralized, automated Hub-and-Spoke dashboard for managing multiple Telegram 
 
 ## 🛠️ Configuration
 
-Create a `.env` file with the following:
+1.  **Template**: Copy the example file to create your real environment file:
+    ```bash
+    cp .env.example .env
+    ```
+2.  **Edit**: Fill in your secrets in the newly created `.env` file:
 
 | Variable | Description |
 |----------|-------------|
