@@ -258,10 +258,24 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.callback_query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(btns))
         except Exception as e:
             print(f"⚠️ Edit Failed: {e}")
-            await update.callback_query.message.delete()
-            await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=InlineKeyboardMarkup(btns))
+            try:
+                await update.callback_query.message.delete()
+            except: pass
+            try:
+                await context.bot.send_message(chat_id=update.effective_chat.id, text=text, reply_markup=InlineKeyboardMarkup(btns))
+            except Exception as e2:
+                print(f"❌ Critical Send Failure (Edit Fallback): {e2}")
     else:
-        await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(btns))
+        try:
+            await update.message.reply_text(text, reply_markup=InlineKeyboardMarkup(btns))
+        except Exception as e:
+            print(f"❌ Critical Send Failure (Initial): {e}")
+            # Try sending without buttons as a last resort
+            try:
+                print("🔄 Attempting to send without buttons...")
+                await update.message.reply_text(text + "\n\n(Buttons failed to load)")
+            except Exception as e3:
+                print(f"💀 Fatal Send Failure: {e3}")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
