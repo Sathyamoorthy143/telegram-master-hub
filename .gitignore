@@ -1,0 +1,23 @@
+# Secrets and Sessions
+.env
+*.session
+*.session-journal
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Logs
+*.log
+dashboard.log
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store

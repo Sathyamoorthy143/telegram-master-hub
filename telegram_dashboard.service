@@ -1,0 +1,17 @@
+[Unit]
+Description=Telegram Master Dashboard
+After=network.target
+
+[Service]
+# Adjust User and WorkingDirectory to match your EC2 setup
+User=ubuntu
+WorkingDirectory=/home/ubuntu/complete-dashboard-of-telegram
+ExecStart=/home/ubuntu/complete-dashboard-of-telegram/venv/bin/python super_dashboard.py
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=telegram-dashboard
+
+[Install]
+WantedBy=multi-user.target
