@@ -360,6 +360,7 @@ async def main_hub():
     
     bot_app.add_handler(CommandHandler("start", start))
     bot_app.add_handler(CallbackQueryHandler(button_handler))
+    bot_app.add_handler(MessageHandler(filters.Regex(r"(?i)^(beign|begin|hub|status)$"), start))
     if bot_app.job_queue: bot_app.job_queue.run_repeating(log_streamer_job, interval=3)
     
     # Retry initialization
