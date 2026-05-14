@@ -212,8 +212,13 @@ async def sync_with_botfather():
 
 # --- 5. TELEGRAM UI ---
 def clean_text(text: str) -> str:
-    """Removes any potential breaking characters."""
-    return str(text).replace("<", "").replace(">", "")
+    """Removes any potential breaking characters and non-ascii."""
+    try:
+        # Extreme cleaning: Keep only readable characters
+        import re
+        return re.sub(r'[^\x00-\x7F]+', '', str(text))
+    except:
+        return str(text)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not update.effective_user or update.effective_user.id not in ADMIN_IDS:
@@ -272,10 +277,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"❌ Critical Send Failure (Initial): {e}")
             # Try sending without buttons as a last resort
             try:
-                print("🔄 Attempting to send without buttons...")
-                await update.message.reply_text(text + "\n\n(Buttons failed to load)")
-            except Exception as e3:
-                print(f"💀 Fatal Send Failure: {e3}")
+                print("🔄 Attempting EMERGENCY TEST: Sending 'HELLO WORLD'...")
+                await update.message.reply_text("⚠️ EMERGENCY TEST: Hello World. If you see this, the dashboard content is the problem.")
+            except Exception as e4:
+                print(f"💀 TOTAL SYSTEM FAILURE: Even Hello World failed: {e4}")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
